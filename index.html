@@ -108,6 +108,30 @@
     background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;
     padding: .6rem 1rem; margin-bottom: 1rem; font-size: .85rem; color: #856404;
   }
+
+  .paste-wrapper { position: relative; }
+  .paste-wrapper textarea { padding-right: 90px; }
+  .paste-hint {
+    position: absolute; top: .5rem; right: .6rem;
+    font-size: .72rem; color: #a0988e; text-align: right; line-height: 1.3;
+    pointer-events: none;
+  }
+  .paste-hint kbd {
+    background: #e8e3dc; border: 1px solid #c4b9ad; border-radius: 3px;
+    padding: 1px 5px; font-size: .7rem; font-family: inherit; color: #5b3e2d;
+  }
+  .paste-previews { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+  .paste-previews .thumb {
+    position: relative; width: 80px; height: 80px; border-radius: 6px;
+    overflow: hidden; border: 1px solid #ddd; background: #f9f8f6;
+  }
+  .paste-previews .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .paste-previews .thumb .remove {
+    position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
+    border-radius: 50%; background: rgba(0,0,0,.55); color: #fff;
+    border: none; cursor: pointer; font-size: .7rem; line-height: 20px; text-align: center;
+  }
+  .paste-previews .thumb .remove:hover { background: rgba(180,40,40,.8); }
 </style>
 </head>
 <body>
@@ -139,11 +163,11 @@
 
       <div class="question">
         <label>Welche zwei bis drei Features sollten sicher in die finale Version übernommen werden?</label>
-        <textarea id="q-final-features" placeholder="z. B. Filter, Popups, bestimmte Design-Elemente..."></textarea>
+        <div class="paste-wrapper"><textarea id="q-final-features" placeholder="z. B. Filter, Popups, bestimmte Design-Elemente..."></textarea></div>
       </div>
       <div class="question">
         <label>Welche Elemente sollten eher vermieden werden?</label>
-        <textarea id="q-final-avoid" placeholder="Was hat gestört oder nicht funktioniert?"></textarea>
+        <div class="paste-wrapper"><textarea id="q-final-avoid" placeholder="Was hat gestört oder nicht funktioniert?"></textarea></div>
       </div>
       <div class="question">
         <label>Welche Seite wirkte insgesamt am einladendsten?</label>
@@ -159,7 +183,9 @@
       </div>
       <div class="question">
         <label>Sonstige Anmerkungen (optional)</label>
-        <textarea id="q-final-notes" placeholder="Alles, was Sie sonst noch sagen möchten..."></textarea>
+        <div class="paste-wrapper"><textarea id="q-final-notes" onpaste="handleFinalPaste(event)" placeholder="Alles, was Sie sonst noch sagen möchten..."></textarea>
+        <div class="paste-hint"><kbd>Win+Shift+S</kbd><br>dann <kbd>Strg+V</kbd></div></div>
+        <div class="paste-previews" id="previews-final"></div>
       </div>
       <button class="btn btn-primary" onclick="submitSurvey()">Umfrage abschließen</button>
     </div>
@@ -279,7 +305,9 @@ function buildSectionHTML(site, idx) {
   html += '</div></div>';
 
   html += '<div class="question"><label>Sonstige Anmerkungen / Kommentare zu Seite ' + site.num + '</label>';
-  html += '<textarea id="comment-' + idx + '" onchange="updateComment(\'' + idx + '\')" placeholder="Was hat Ihnen gefallen? Was hat nicht funktioniert?"></textarea></div>';
+  html += '<div class="paste-wrapper"><textarea id="comment-' + idx + '" onchange="updateComment(\'' + idx + '\')" onpaste="handlePaste(event,\'' + idx + '\')" placeholder="Was hat Ihnen gefallen? Was hat nicht funktioniert?"></textarea>';
+  html += '<div class="paste-hint"><kbd>Win+Shift+S</kbd><br>dann <kbd>Strg+V</kbd></div></div>';
+  html += '<div class="paste-previews" id="previews-' + idx + '"></div></div>';
 
   html += '<div class="btn-row">';
   if (idx > 0) {
@@ -330,6 +358,85 @@ function updateComment(idx) {
   results[idx].comment = val;
 }
 
+// --- SCREENSHOT PASTE ---
+function handlePaste(e, idx) {
+  if (!results[idx]) results[idx] = {};
+  if (!results[idx].screenshots) results[idx].screenshots = [];
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  let added = false;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const blob = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = function() {
+        results[idx].screenshots.push(reader.result);
+        renderPreviews(idx);
+        added = true;
+      };
+      reader.readAsDataURL(blob);
+    }
+  }
+  // Update comment text after paste too
+  setTimeout(() => updateComment(idx), 100);
+}
+
+function renderPreviews(idx) {
+  const container = document.getElementById('previews-' + idx);
+  if (!container) return;
+  const shots = (results[idx] && results[idx].screenshots) || [];
+  container.innerHTML = '';
+  shots.forEach((src, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    thumb.innerHTML = '<img src="' + src + '" alt="Screenshot ' + (i+1) + '"><button class="remove" onclick="removeScreenshot(' + idx + ',' + i + ')" title="Entfernen">✕</button>';
+    container.appendChild(thumb);
+  });
+}
+
+function removeScreenshot(idx, i) {
+  if (results[idx] && results[idx].screenshots) {
+    results[idx].screenshots.splice(i, 1);
+    renderPreviews(idx);
+  }
+}
+
+let finalScreenshots = [];
+function handleFinalPaste(e) {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const blob = item.getAsFile();
+      const reader = new FileReader();
+      reader.onload = function() {
+        finalScreenshots.push(reader.result);
+        renderFinalPreviews();
+      };
+      reader.readAsDataURL(blob);
+    }
+  }
+}
+
+function renderFinalPreviews() {
+  const container = document.getElementById('previews-final');
+  if (!container) return;
+  container.innerHTML = '';
+  finalScreenshots.forEach((src, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    thumb.innerHTML = '<img src="' + src + '" alt="Screenshot ' + (i+1) + '"><button class="remove" onclick="removeFinalScreenshot(' + i + ')" title="Entfernen">✕</button>';
+    container.appendChild(thumb);
+  });
+}
+
+function removeFinalScreenshot(i) {
+  finalScreenshots.splice(i, 1);
+  renderFinalPreviews();
+}
+
 function showStep(idx) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const target = document.getElementById('section-' + idx);
@@ -350,7 +457,8 @@ function collectResults() {
       avoid: document.getElementById('q-final-avoid').value,
       inviting: document.getElementById('q-final-inviting').value,
       clearest: document.getElementById('q-final-clearest').value,
-      notes: document.getElementById('q-final-notes').value
+      notes: document.getElementById('q-final-notes').value,
+      screenshots: finalScreenshots
     }
   };
 
