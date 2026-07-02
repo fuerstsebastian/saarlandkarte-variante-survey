@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bewertung Saarland-Archäologie-Kartenvarianten</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: #f5f3ef;
+    color: #2d2a26;
+    line-height: 1.6;
+    padding: 1rem;
+  }
+  .container { max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin-bottom: .25rem; color: #5b3e2d; }
+  h2 { font-size: 1.25rem; margin: 1.5rem 0 .5rem; color: #5b3e2d; }
+  .subtitle { color: #7a6e64; margin-bottom: 1.5rem; font-size: .95rem; }
+
+  .intro {
+    background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .intro p { margin-bottom: .5rem; }
+  .intro ul { margin: .5rem 0 1rem 1.5rem; }
+
+  .progress-bar {
+    height: 4px; background: #e0dbd4; border-radius: 2px; margin-bottom: 1.5rem;
+  }
+  .progress-fill {
+    height: 100%; background: #5b3e2d; border-radius: 2px;
+    transition: width .3s ease;
+  }
+
+  .section {
+    background: #fff; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    display: none;
+  }
+  .section.active { display: block; }
+
+  .site-link {
+    display: inline-block; padding: .6rem 1.2rem; background: #5b3e2d; color: #fff;
+    text-decoration: none; border-radius: 8px; margin: .5rem 0 1rem;
+    font-weight: 500; transition: background .2s;
+  }
+  .site-link:hover { background: #7a5540; }
+
+  .question { margin-bottom: 1.25rem; }
+  .question label {
+    display: block; font-weight: 600; margin-bottom: .3rem; font-size: .95rem;
+  }
+  .question .hint { font-size: .8rem; color: #8a7e74; margin-bottom: .4rem; }
+
+  .stars { display: flex; gap: .3rem; }
+  .stars button {
+    width: 40px; height: 40px; border: 2px solid #c4b9ad; border-radius: 8px;
+    background: #fff; cursor: pointer; font-size: 1.2rem; color: #c4b9ad;
+    transition: all .15s; display: flex; align-items: center; justify-content: center;
+  }
+  .stars button:hover { border-color: #a0886a; color: #a0886a; }
+  .stars button.selected { background: #5b3e2d; border-color: #5b3e2d; color: #fff; }
+  .stars button.na {
+    width: auto; padding: 0 .8rem; font-size: .8rem; font-weight: 500;
+  }
+
+  .checkboxes { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .checkboxes label {
+    display: flex; align-items: center; gap: .4rem; padding: .4rem .8rem;
+    border: 1.5px solid #c4b9ad; border-radius: 8px; cursor: pointer;
+    font-weight: 400; font-size: .9rem; transition: all .15s;
+  }
+  .checkboxes label:hover { border-color: #a0886a; }
+  .checkboxes input { display: none; }
+  .checkboxes input:checked + span::before { content: '✓ '; color: #5b3e2d; font-weight: 700; }
+  .checkboxes label:has(input:checked) {
+    background: #f0ebe3; border-color: #5b3e2d;
+  }
+
+  textarea {
+    width: 100%; min-height: 80px; padding: .6rem; border: 1.5px solid #c4b9ad;
+    border-radius: 8px; font-family: inherit; font-size: .9rem; resize: vertical;
+  }
+  textarea:focus { outline: none; border-color: #5b3e2d; }
+
+  .btn-row { display: flex; gap: .75rem; margin-top: 1.5rem; }
+  button.btn {
+    padding: .7rem 1.8rem; border: none; border-radius: 8px; cursor: pointer;
+    font-size: .95rem; font-weight: 600; transition: all .15s;
+  }
+  .btn-primary { background: #5b3e2d; color: #fff; }
+  .btn-primary:hover { background: #7a5540; }
+  .btn-secondary { background: #e0dbd4; color: #2d2a26; }
+  .btn-secondary:hover { background: #d0c9c0; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .final-section { display: none; }
+  .final-section.active { display: block; }
+  .final-section .question { margin-bottom: 1rem; }
+
+  .summary { display: none; background: #fff; border-radius: 12px; padding: 1.5rem; }
+  .summary.active { display: block; }
+
+  .export-btn { margin-top: 1rem; }
+
+  .warning {
+    background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;
+    padding: .6rem 1rem; margin-bottom: 1rem; font-size: .85rem; color: #856404;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Bewertung: Saarland-Archäologie-Kartenvarianten</h1>
+  <p class="subtitle">Studentisches Projekt • SoSe 2026 • Universität des Saarlandes</p>
+
+  <div class="intro" id="intro">
+    <p><strong>Willkommen!</strong> Bitte bewerten Sie nacheinander alle sieben Kartenvarianten.</p>
+    <ul>
+      <li>Öffnen Sie jede Seite in einem <strong>neuen Tab</strong> und erkunden Sie sie.</li>
+      <li>Betrachten Sie jede Seite sowohl in <strong>voller Breite</strong> als auch in einem <strong>schmalen Fenster</strong> (Handy-Ansicht).</li>
+      <li>Es handelt sich um <strong>studentische Prototypen mit Dummy-Daten</strong>. Die Fundstellendaten sind Platzhalter.</li>
+      <li>Bewertet werden Chancen und übernehmenswerte Lösungen, nicht Personen.</li>
+    </ul>
+    <p><em>Dauer: ca. 10–15 Minuten. Die Reihenfolge der Seiten ist zufällig.</em></p>
+    <button class="btn btn-primary" onclick="startSurvey()">Umfrage starten</button>
+  </div>
+
+  <div class="progress-bar" id="progressBar" style="display:none;">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="final-section" id="finalSection">
+    <div class="section active">
+      <h2>Abschlussfragen – Gesamteindruck</h2>
+
+      <div class="question">
+        <label>Welche zwei bis drei Features sollten sicher in die finale Version übernommen werden?</label>
+        <textarea id="q-final-features" placeholder="z. B. Filter, Popups, bestimmte Design-Elemente..."></textarea>
+      </div>
+      <div class="question">
+        <label>Welche Elemente sollten eher vermieden werden?</label>
+        <textarea id="q-final-avoid" placeholder="Was hat gestört oder nicht funktioniert?"></textarea>
+      </div>
+      <div class="question">
+        <label>Welche Seite wirkte insgesamt am einladendsten?</label>
+        <select id="q-final-inviting" style="padding:.5rem;border-radius:8px;border:1.5px solid #c4b9ad;width:100%;font-size:.9rem;">
+          <option value="">– Bitte wählen –</option>
+        </select>
+      </div>
+      <div class="question">
+        <label>Welche Seite wirkte insgesamt am klarsten?</label>
+        <select id="q-final-clearest" style="padding:.5rem;border-radius:8px;border:1.5px solid #c4b9ad;width:100%;font-size:.9rem;">
+          <option value="">– Bitte wählen –</option>
+        </select>
+      </div>
+      <div class="question">
+        <label>Sonstige Anmerkungen (optional)</label>
+        <textarea id="q-final-notes" placeholder="Alles, was Sie sonst noch sagen möchten..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitSurvey()">Umfrage abschließen</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <h2>Vielen Dank!</h2>
+    <p>Ihre Bewertung wurde gespeichert. Sie können die Ergebnisse jetzt herunterladen:</p>
+    <button class="btn btn-primary export-btn" onclick="exportCSV()">Als CSV herunterladen</button>
+    <button class="btn btn-secondary export-btn" onclick="exportJSON()">Als JSON herunterladen</button>
+  </div>
+</div>
+
+<script>
+// --- CONFIG ---
+const SITES = [
+  { num: '01', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-01/' },
+  { num: '02', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-02/' },
+  { num: '03', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-03/' },
+  { num: '04', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-04/' },
+  { num: '05', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-05/' },
+  { num: '06', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-06/' },
+  { num: '07', url: 'https://fuerstsebastian.github.io/saarlandkarte-variante-07/' }
+];
+
+const DIMENSIONS = [
+  { id: 'clarity', label: 'Klarheit und Orientierung', hint: 'Ich finde schnell, was ich brauche.' },
+  { id: 'trust', label: 'Vertrauen und Verlässlichkeit', hint: 'Die Seite wirkt sorgfältig, plausibel und seriös.' },
+  { id: 'friendliness', label: 'Freundlichkeit und Einladung zum Stöbern', hint: 'Die Seite macht Lust, Archäologie im Saarland zu entdecken.' },
+  { id: 'impulse', label: 'Ausflugsimpuls', hint: 'Die Seite motiviert mich, eine Fundstelle oder Attraktion vor Ort zu besuchen.' },
+  { id: 'map', label: 'Kartenbedienung', hint: 'Marker, Popups, Navigation und Karteninteraktion sind gut nutzbar.' },
+  { id: 'filter', label: 'Filter und Informationszugang', hint: 'Suche, Filter, Kategorien oder Listen helfen beim Entdecken.' },
+  { id: 'responsive', label: 'Responsiver Eindruck', hint: 'Im schmalen Browserfenster bleibt die Seite brauchbar.' }
+];
+
+const FEATURES = [
+  'Kartenmarker / Icons',
+  'Popups / Detailansicht',
+  'Filter / Suche',
+  'Fundstellenliste',
+  'Routen- / Ausflugsidee',
+  'Bilder / Medien',
+  'Epochen- / Kategorie-Erklärung',
+  'Design / Farbwelt',
+  'Spielerische oder entdeckende Elemente',
+  'Mobile / kompakte Darstellung',
+  'Sonstiges'
+];
+
+// --- STATE ---
+let order = [];
+let currentStep = 0;
+let results = {};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startSurvey() {
+  order = shuffle(SITES);
+  // Deterministic seed per user session via localStorage
+  // (re-randomize only if not already set)
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'block';
+  document.getElementById('finalSection').classList.add('active');
+
+  const container = document.getElementById('sections');
+  order.forEach((site, idx) => {
+    const section = document.createElement('div');
+    section.className = 'section';
+    section.id = 'section-' + idx;
+    section.innerHTML = buildSectionHTML(site, idx);
+    container.appendChild(section);
+
+    // Add final section option references
+    const invSelect = document.getElementById('q-final-inviting');
+    const clearSelect = document.getElementById('q-final-clearest');
+    const opt = document.createElement('option');
+    opt.value = site.num;
+    opt.textContent = 'Seite ' + site.num;
+    invSelect.appendChild(opt.cloneNode(true));
+    clearSelect.appendChild(opt.cloneNode(true));
+  });
+
+  showStep(0);
+}
+
+function buildSectionHTML(site, idx) {
+  let html = '<h2>Seite ' + site.num + '</h2>';
+  html += '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Seite ' + site.num + ' in neuem Tab öffnen ↗</a>';
+
+  DIMENSIONS.forEach(dim => {
+    html += '<div class="question">';
+    html += '<label>' + dim.label + '</label>';
+    html += '<div class="hint">' + dim.hint + '</div>';
+    html += '<div class="stars" id="stars-' + idx + '-' + dim.id + '">';
+    for (let i = 1; i <= 5; i++) {
+      html += '<button type="button" onclick="setRating(\'' + idx + '\',\'' + dim.id + '\',' + i + ')" data-value="' + i + '">★</button>';
+    }
+    if (dim.id === 'responsive') {
+      html += '<button type="button" class="na" onclick="setRating(\'' + idx + '\',\'' + dim.id + '\',0)">nicht geprüft</button>';
+    }
+    html += '</div></div>';
+  });
+
+  html += '<div class="question"><label>Welche Merkmale sind Ihnen positiv aufgefallen?</label>';
+  html += '<div class="checkboxes" id="features-' + idx + '">';
+  FEATURES.forEach((f, fi) => {
+    const fid = 'feat-' + idx + '-' + fi;
+    html += '<label><input type="checkbox" id="' + fid + '" onchange="updateFeatures(\'' + idx + '\')"><span>' + f + '</span></label>';
+  });
+  html += '</div></div>';
+
+  html += '<div class="question"><label>Sonstige Anmerkungen / Kommentare zu Seite ' + site.num + '</label>';
+  html += '<textarea id="comment-' + idx + '" onchange="updateComment(\'' + idx + '\')" placeholder="Was hat Ihnen gefallen? Was hat nicht funktioniert?"></textarea></div>';
+
+  html += '<div class="btn-row">';
+  if (idx > 0) {
+    html += '<button class="btn btn-secondary" onclick="showStep(' + (idx - 1) + ')">← Zurück</button>';
+  }
+  if (idx < SITES.length - 1) {
+    html += '<button class="btn btn-primary" onclick="showStep(' + (idx + 1) + ')">Weiter →</button>';
+  } else {
+    html += '<button class="btn btn-primary" onclick="scrollToFinal()">Zu den Abschlussfragen →</button>';
+  }
+  html += '</div>';
+
+  return html;
+}
+
+function scrollToFinal() {
+  document.getElementById('finalSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+function setRating(idx, dimId, value) {
+  if (!results[idx]) results[idx] = {};
+  if (!results[idx].ratings) results[idx].ratings = {};
+  results[idx].ratings[dimId] = value;
+
+  const container = document.getElementById('stars-' + idx + '-' + dimId);
+  if (container) {
+    container.querySelectorAll('button[data-value]').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.value) <= value);
+    });
+    const naBtn = container.querySelector('button.na');
+    if (naBtn) naBtn.classList.toggle('selected', value === 0);
+  }
+}
+
+function updateFeatures(idx) {
+  const container = document.getElementById('features-' + idx);
+  const checked = [];
+  container.querySelectorAll('input:checked').forEach(cb => {
+    checked.push(cb.parentElement.querySelector('span').textContent);
+  });
+  if (!results[idx]) results[idx] = {};
+  results[idx].features = checked;
+}
+
+function updateComment(idx) {
+  const val = document.getElementById('comment-' + idx).value;
+  if (!results[idx]) results[idx] = {};
+  results[idx].comment = val;
+}
+
+function showStep(idx) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('section-' + idx);
+  if (target) target.classList.add('active');
+  currentStep = idx;
+  const pct = Math.round(((idx + 1) / SITES.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function collectResults() {
+  const finalData = {
+    timestamp: new Date().toISOString(),
+    order: order.map(s => s.num),
+    pages: {},
+    final: {
+      features: document.getElementById('q-final-features').value,
+      avoid: document.getElementById('q-final-avoid').value,
+      inviting: document.getElementById('q-final-inviting').value,
+      clearest: document.getElementById('q-final-clearest').value,
+      notes: document.getElementById('q-final-notes').value
+    }
+  };
+
+  order.forEach((site, idx) => {
+    finalData.pages['Seite ' + site.num] = results[idx] || {};
+  });
+
+  return finalData;
+}
+
+function submitSurvey() {
+  const data = collectResults();
+  localStorage.setItem('saarland-survey-result', JSON.stringify(data));
+  document.getElementById('sections').style.display = 'none';
+  document.getElementById('finalSection').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'none';
+  document.getElementById('summary').classList.add('active');
+}
+
+function getResults() {
+  const raw = localStorage.getItem('saarland-survey-result');
+  return raw ? JSON.parse(raw) : null;
+}
+
+function exportJSON() {
+  const data = getResults();
+  if (!data) return alert('Keine Ergebnisse gefunden.');
+  download('survey-ergebnis.json', JSON.stringify(data, null, 2));
+}
+
+function exportCSV() {
+  const data = getResults();
+  if (!data) return alert('Keine Ergebnisse gefunden.');
+
+  let rows = [];
+  // Header
+  let header = ['Seite', 'Reihenfolge_Position'];
+  DIMENSIONS.forEach(d => header.push(d.label));
+  header.push('Features');
+  header.push('Kommentar');
+  rows.push(header.join(','));
+
+  // Per page
+  order.forEach((site, idx) => {
+    const key = 'Seite ' + site.num;
+    const page = data.pages[key] || {};
+    const ratings = page.ratings || {};
+    let row = [key, String(idx + 1)];
+    DIMENSIONS.forEach(d => {
+      row.push(ratings[d.id] !== undefined ? ratings[d.id] : '');
+    });
+    row.push('"' + (page.features || []).join('; ') + '"');
+    row.push('"' + (page.comment || '').replace(/"/g, '""') + '"');
+    rows.push(row.join(','));
+  });
+
+  // Final section
+  rows.push('');
+  rows.push('ABSCHLUSSFRAGEN');
+  rows.push('Features für finale Version,"' + (data.final.features || '').replace(/"/g, '""') + '"');
+  rows.push('Zu vermeidende Elemente,"' + (data.final.avoid || '').replace(/"/g, '""') + '"');
+  rows.push('Einladendste Seite,' + (data.final.inviting || ''));
+  rows.push('Klarste Seite,' + (data.final.clearest || ''));
+  rows.push('Sonstige Anmerkungen,"' + (data.final.notes || '').replace(/"/g, '""') + '"');
+  rows.push('');
+  rows.push('Reihenfolge,' + data.order.join(' -> '));
+  rows.push('Zeitstempel,' + data.timestamp);
+
+  download('survey-ergebnis.csv', '\uFEFF' + rows.join('\n'));
+}
+
+function download(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
