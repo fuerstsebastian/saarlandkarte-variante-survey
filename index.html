@@ -146,9 +146,14 @@
       <li>Betrachte jede Seite sowohl in <strong>voller Breite</strong> als auch in einem <strong>schmalen Fenster</strong> (Handy-Ansicht).</li>
       <li>Wichtig: Es handelt sich um <strong>studentische Prototypen mit Dummy-Daten</strong>. Die Fundstellendaten sind Platzhalter.</li>
       <li>Bewertet werden die Features, die Funktionalität und das Layout, nicht die Personen.</li>
+      <li><strong>Screenshots einfügen:</strong> Drücke <kbd>Win+Shift+S</kbd>, wähle einen Bereich aus, klicke ins Kommentarfeld und drücke <kbd>Strg+V</kbd>.</li>
     </ul>
     <p><em>Dauer: ca. 10–15 Minuten. Die Reihenfolge der Seiten ist zufällig.</em></p>
     <button class="btn btn-primary" onclick="startSurvey()">Umfrage starten</button>
+    <div style="margin-top:1.5rem; text-align:center;">
+      <p style="font-size:.85rem;color:#7a6e64;margin-bottom:.5rem;">Auch auf dem Handy verfügbar:</p>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://fuerstsebastian.github.io/saarlandkarte-variante-survey/" alt="QR-Code zur Umfrage" width="180" height="180" style="border-radius:8px;">
+    </div>
   </div>
 
   <div class="progress-bar" id="progressBar" style="display:none;">
@@ -188,6 +193,45 @@
         <div class="paste-previews" id="previews-final"></div>
       </div>
       <button class="btn btn-primary" onclick="submitSurvey()">Umfrage abschließen</button>
+
+      <div class="section active" style="margin-top:1.5rem;">
+      <h2>Namensvorschlag für die finale Karte</h2>
+
+      <div class="question">
+        <label>Welchen Namen findest du am besten? (Favorit)</label>
+        <select id="q-name-favorite" style="padding:.5rem;border-radius:8px;border:1.5px solid #c4b9ad;width:100%;font-size:.9rem;">
+          <option value="">– Bitte wählen –</option>
+          <option>Archäo Saar</option>
+          <option>Archäo Karte Saar</option>
+          <option>Archäo Map Saarland</option>
+          <option>Saarland im Lauf der Zeit</option>
+          <option>Archäologische Ausflugsziele des Saarlands</option>
+          <option>Kulturatlas Saarland</option>
+          <option>Archäo-Atlas Saarland</option>
+          <option>Archäo-Touren-Saarland</option>
+          <option>Archäo-Explorer Saarland</option>
+        </select>
+      </div>
+      <div class="question">
+        <label>Welcher Name ist deine zweite Wahl? (Alternative)</label>
+        <select id="q-name-alternative" style="padding:.5rem;border-radius:8px;border:1.5px solid #c4b9ad;width:100%;font-size:.9rem;">
+          <option value="">– Bitte wählen –</option>
+          <option>Archäo Saar</option>
+          <option>Archäo Karte Saar</option>
+          <option>Archäo Map Saarland</option>
+          <option>Saarland im Lauf der Zeit</option>
+          <option>Archäologische Ausflugsziele des Saarlands</option>
+          <option>Kulturatlas Saarland</option>
+          <option>Archäo-Atlas Saarland</option>
+          <option>Archäo-Touren-Saarland</option>
+          <option>Archäo-Explorer Saarland</option>
+        </select>
+      </div>
+      <div class="question">
+        <label>Eigener Namensvorschlag (optional)</label>
+        <textarea id="q-name-custom" placeholder="Hast du eine eigene Idee für den Namen der finalen Karte?"></textarea>
+      </div>
+      </div>
     </div>
   </div>
 
@@ -459,6 +503,11 @@ function collectResults() {
       clearest: document.getElementById('q-final-clearest').value,
       notes: document.getElementById('q-final-notes').value,
       screenshots: finalScreenshots
+    },
+    naming: {
+      favorite: document.getElementById('q-name-favorite').value,
+      alternative: document.getElementById('q-name-alternative').value,
+      custom: document.getElementById('q-name-custom').value
     }
   };
 
