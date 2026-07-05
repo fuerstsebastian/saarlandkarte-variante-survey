@@ -263,7 +263,15 @@
       <div class="section active" style="margin-top:1.5rem;">
       <h2>Alle Internetseiten noch einmal ansehen</h2>
       <p style="font-size:.9rem;color:#7a6e74;margin-bottom:.75rem;">Falls du noch einmal nachschauen möchtest:</p>
-      <div id="finalSiteLinks" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.5rem;"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.5rem;">
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-01/" target="_blank" rel="noopener">Seite 01</a>
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-02/" target="_blank" rel="noopener">Seite 02</a>
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-03/" target="_blank" rel="noopener">Seite 03</a>
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-04/" target="_blank" rel="noopener">Seite 04</a>
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-05/" target="_blank" rel="noopener">Seite 05</a>
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-06/" target="_blank" rel="noopener">Seite 06</a>
+        <a class="site-link" href="https://fuerstsebastian.github.io/saarlandkarte-variante-07/" target="_blank" rel="noopener">Seite 07</a>
+      </div>
       </div>
 
       <div class="section active" style="margin-top:1.5rem;">
@@ -496,21 +504,6 @@ function startSurvey() {
     clearSelect.appendChild(opt.cloneNode(true));
   });
 
-  // Abschlussseite: Links zu allen Internetseiten
-  const finalLinks = document.getElementById('finalSiteLinks');
-  if (finalLinks) {
-    finalLinks.innerHTML = '';
-    SITES.forEach(site => {
-      const link = document.createElement('a');
-      link.className = 'site-link';
-      link.href = site.url;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      link.textContent = 'Seite ' + site.num;
-      finalLinks.appendChild(link);
-    });
-  }
-
   showStep(0);
 }
 
@@ -599,9 +592,7 @@ function showDisplayStep(idx) {
 
 function scrollToFinal() {
   const finalSection = document.getElementById('finalSection');
-  const finalInner = document.querySelector('#finalSection > .section');
-  finalSection.classList.add('active');
-  if (finalInner) finalInner.classList.add('active');
+  finalSection.style.display = 'block';
   finalSection.scrollIntoView({ behavior: 'smooth' });
 }
 
