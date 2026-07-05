@@ -109,6 +109,47 @@
     padding: .6rem 1rem; margin-bottom: 1rem; font-size: .85rem; color: #856404;
   }
 
+  .session-box {
+    margin-top: 1.5rem; padding: 1rem; border: 1.5px solid #d8cfc3;
+    border-radius: 12px; background: #faf8f5; text-align: center;
+  }
+  .session-code {
+    display: inline-block; letter-spacing: .16em; font-size: 1.4rem; font-weight: 800;
+    color: #5b3e2d; background: #fff; border: 1.5px solid #d8cfc3;
+    border-radius: 8px; padding: .25rem .65rem; margin: .25rem 0 .75rem;
+  }
+  .session-actions {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem; margin-top: .8rem;
+  }
+  .session-note, .session-share-details {
+    font-size: .85rem; color: #6e6258; margin-top: .8rem; text-align: left;
+  }
+  .session-share-details { display: none; background: #fff; border-radius: 8px; padding: .8rem; }
+  .session-share-details.active { display: block; }
+  .session-link {
+    word-break: break-all; font-size: .78rem; background: #f0ebe3;
+    border-radius: 6px; padding: .45rem; margin-top: .5rem;
+  }
+  .display-mode { display: none; }
+  .display-mode.active { display: block; }
+  .display-card {
+    background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .display-header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: .75rem; margin-bottom: .75rem;
+  }
+  .display-frame {
+    width: 100%; height: 72vh; border: 1.5px solid #d8cfc3; border-radius: 10px;
+    background: #f9f8f6;
+  }
+  .check-confirm label {
+    display: flex; gap: .5rem; align-items: flex-start; font-weight: 500;
+    background: #f7f2ea; border: 1.5px solid #d8cfc3; border-radius: 8px; padding: .65rem;
+  }
+  .check-confirm input { margin-top: .25rem; }
+
   .paste-wrapper { position: relative; }
   .paste-wrapper textarea { padding-right: 90px; }
   .paste-hint {
@@ -150,11 +191,24 @@
     </ul>
     <p><em>Dauer: ca. 10–15 Minuten. Die Reihenfolge der Seiten ist zufällig.</em></p>
     <button class="btn btn-primary" onclick="startSurvey()">Umfrage starten</button>
-    <div style="margin-top:1.5rem; text-align:center;">
-      <p style="font-size:.85rem;color:#7a6e64;margin-bottom:.5rem;">Auch auf dem Handy verfügbar:</p>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://fuerstsebastian.github.io/saarlandkarte-variante-survey/" alt="QR-Code zur Umfrage" width="180" height="180" style="border-radius:8px;">
+    <div class="session-box" id="sessionBox">
+      <p style="font-size:.85rem;color:#7a6e64;margin-bottom:.35rem;">Diese Umfrage-Session:</p>
+      <div class="session-code" id="sessionCode">----</div>
+      <p style="font-size:.85rem;color:#7a6e64;margin-bottom:.5rem;">Fragen auf dem Smartphone öffnen:</p>
+      <img id="sessionQr" src="" alt="QR-Code zur gekoppelten Umfrage-Session" width="180" height="180" style="border-radius:8px;">
+      <div class="session-actions">
+        <button class="btn btn-secondary" onclick="shareSession()">Session-Link anzeigen</button>
+        <button class="btn btn-secondary" onclick="startDisplayMode()">Monitor-Modus am PC starten</button>
+      </div>
+      <p class="session-note"><strong>So funktioniert es:</strong> Öffne die Fragen per QR-Code auf dem Smartphone. Auf dem PC kannst du den Monitor-Modus starten, damit dort die zu bewertenden Webseiten in derselben zufälligen Reihenfolge angezeigt werden.</p>
+      <div class="session-share-details" id="sessionShareDetails">
+        <strong>Optionaler Fallback:</strong> Falls der QR-Code nicht genutzt werden kann, kann dieser Link manuell auf dem Smartphone geöffnet oder geteilt werden. <strong>Kontrolle ist wichtig:</strong> Vergleiche vor jeder Bewertung den vierstelligen Session-Code und die Seitennummer auf PC und Smartphone. Nur wenn beides übereinstimmt, gehört die angezeigte Webseite zur richtigen Survey-Frage.
+        <div class="session-link" id="sessionLinkText"></div>
+      </div>
     </div>
   </div>
+
+  <div class="display-mode" id="displayMode"></div>
 
   <div class="progress-bar" id="progressBar" style="display:none;">
     <div class="progress-fill" id="progressFill" style="width:0%"></div>
@@ -283,6 +337,11 @@ const FEATURES = [
 let order = [];
 let currentStep = 0;
 let results = {};
+let sessionInfo = null;
+let displayStep = 0;
+
+const SESSION_STORAGE_KEY = 'saarland-survey-session-v2';
+const SURVEY_PUBLIC_URL = 'https://fuerstsebastian.github.io/saarlandkarte-variante-survey/';
 
 function shuffle(arr) {
   const a = [...arr];
@@ -293,15 +352,114 @@ function shuffle(arr) {
   return a;
 }
 
+function createSessionCode() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function parseOrderParam(value) {
+  if (!value) return null;
+  const nums = value.split(/[-,]/).map(v => v.trim()).filter(Boolean);
+  const validNums = SITES.map(site => site.num);
+  const hasAllSites = nums.length === validNums.length && validNums.every(num => nums.includes(num));
+  const hasNoDuplicates = new Set(nums).size === nums.length;
+  return hasAllSites && hasNoDuplicates ? nums : null;
+}
+
+function getStoredSession() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY));
+    if (!stored || !/^\d{4}$/.test(stored.code)) return null;
+    const orderNums = parseOrderParam(stored.orderNums && stored.orderNums.join('-'));
+    return orderNums ? { code: stored.code, orderNums } : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function initSession() {
+  if (sessionInfo) return sessionInfo;
+
+  const params = new URLSearchParams(window.location.search);
+  const codeFromUrl = params.get('session');
+  const orderFromUrl = parseOrderParam(params.get('order'));
+
+  if (/^\d{4}$/.test(codeFromUrl || '') && orderFromUrl) {
+    sessionInfo = { code: codeFromUrl, orderNums: orderFromUrl };
+  } else {
+    sessionInfo = getStoredSession() || {
+      code: createSessionCode(),
+      orderNums: shuffle(SITES).map(site => site.num)
+    };
+  }
+
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionInfo));
+  return sessionInfo;
+}
+
+function getSessionSites() {
+  initSession();
+  return sessionInfo.orderNums.map(num => SITES.find(site => site.num === num));
+}
+
+function getSurveyBaseUrl() {
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    return window.location.origin + window.location.pathname;
+  }
+  return SURVEY_PUBLIC_URL;
+}
+
+function getSessionUrl(mode) {
+  initSession();
+  const url = new URL(getSurveyBaseUrl());
+  url.searchParams.set('session', sessionInfo.code);
+  url.searchParams.set('order', sessionInfo.orderNums.join('-'));
+  url.searchParams.set('mode', mode);
+  return url.toString();
+}
+
+function renderSessionPanel() {
+  initSession();
+  const codeEl = document.getElementById('sessionCode');
+  const qrEl = document.getElementById('sessionQr');
+  const linkEl = document.getElementById('sessionLinkText');
+  const questionsUrl = getSessionUrl('questions');
+
+  if (codeEl) codeEl.textContent = sessionInfo.code;
+  if (qrEl) qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(questionsUrl);
+  if (linkEl) linkEl.textContent = questionsUrl;
+}
+
+async function shareSession() {
+  const details = document.getElementById('sessionShareDetails');
+  const questionsUrl = getSessionUrl('questions');
+  const shareText = 'Survey-Session ' + sessionInfo.code + ': Fragen auf dem Smartphone öffnen. Bitte Session-Code und Seitennummer mit dem PC vergleichen.';
+  if (details) details.classList.add('active');
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Survey-Session ' + sessionInfo.code, text: shareText, url: questionsUrl });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(questionsUrl);
+    }
+  } catch (e) {
+    // The visible link remains available if sharing is cancelled or blocked.
+  }
+}
+
 function startSurvey() {
-  order = shuffle(SITES);
-  // Deterministic seed per user session via localStorage
-  // (re-randomize only if not already set)
+  initSession();
+  renderSessionPanel();
+  order = getSessionSites();
   document.getElementById('intro').style.display = 'none';
+  document.getElementById('displayMode').classList.remove('active');
+  document.getElementById('sections').style.display = 'block';
   document.getElementById('progressBar').style.display = 'block';
-  document.getElementById('finalSection').classList.add('active');
+  document.getElementById('finalSection').classList.remove('active');
 
   const container = document.getElementById('sections');
+  container.innerHTML = '';
+  document.getElementById('q-final-inviting').innerHTML = '<option value="">– Bitte wählen –</option>';
+  document.getElementById('q-final-clearest').innerHTML = '<option value="">– Bitte wählen –</option>';
   order.forEach((site, idx) => {
     const section = document.createElement('div');
     section.className = 'section';
@@ -325,6 +483,8 @@ function startSurvey() {
 function buildSectionHTML(site, idx) {
   let html = '<h2>Seite ' + site.num + '</h2>';
   html += '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Seite ' + site.num + ' in neuem Tab öffnen ↗</a>';
+  html += '<div class="warning"><strong>Kontrollcheck:</strong> Auf dem PC muss jetzt ebenfalls Session ' + sessionInfo.code + ' und Seite ' + site.num + ' angezeigt werden. Bitte prüfe das vor der Bewertung.</div>';
+  html += '<div class="question check-confirm"><label><input type="checkbox" onchange="updateDisplayCheck(\'' + idx + '\', this.checked)"><span>Ich habe geprüft, dass die am PC angezeigte Webseite zu Session ' + sessionInfo.code + ' und Seite ' + site.num + ' gehört.</span></label></div>';
 
   DIMENSIONS.forEach(dim => {
     html += '<div class="question">';
@@ -367,8 +527,49 @@ function buildSectionHTML(site, idx) {
   return html;
 }
 
+function startDisplayMode() {
+  initSession();
+  order = getSessionSites();
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('sections').style.display = 'none';
+  document.getElementById('finalSection').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'none';
+  document.getElementById('summary').classList.remove('active');
+  document.getElementById('displayMode').classList.add('active');
+  showDisplayStep(displayStep);
+}
+
+function showDisplayStep(idx) {
+  initSession();
+  order = getSessionSites();
+  displayStep = Math.max(0, Math.min(idx, order.length - 1));
+  const site = order[displayStep];
+  const container = document.getElementById('displayMode');
+  if (!container || !site) return;
+
+  container.innerHTML =
+    '<div class="display-card">' +
+    '<div class="display-header">' +
+    '<div><h2>Monitor-Modus: Seite ' + site.num + '</h2>' +
+    '<p class="subtitle">Session <strong>' + sessionInfo.code + '</strong> · Position ' + (displayStep + 1) + ' von ' + order.length + '</p></div>' +
+    '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Seite ' + site.num + ' in neuem Tab öffnen ↗</a>' +
+    '</div>' +
+    '<div class="warning"><strong>Kontrollhinweis:</strong> Auf dem Smartphone muss dieselbe Session ' + sessionInfo.code + ' und dieselbe Seite ' + site.num + ' angezeigt werden, bevor bewertet wird.</div>' +
+    '<iframe class="display-frame" src="' + site.url + '" title="Seite ' + site.num + '"></iframe>' +
+    '<div class="btn-row">' +
+    '<button class="btn btn-secondary" onclick="showDisplayStep(' + (displayStep - 1) + ')" ' + (displayStep === 0 ? 'disabled' : '') + '>← Vorige Seite</button>' +
+    '<button class="btn btn-primary" onclick="showDisplayStep(' + (displayStep + 1) + ')" ' + (displayStep === order.length - 1 ? 'disabled' : '') + '>Nächste Seite →</button>' +
+    '<button class="btn btn-secondary" onclick="location.href=\'' + getSessionUrl('questions') + '\'">Zur Fragenansicht</button>' +
+    '</div>' +
+    '</div>';
+}
+
 function scrollToFinal() {
-  document.getElementById('finalSection').scrollIntoView({ behavior: 'smooth' });
+  const finalSection = document.getElementById('finalSection');
+  const finalInner = document.querySelector('#finalSection > .section');
+  finalSection.classList.add('active');
+  if (finalInner) finalInner.classList.add('active');
+  finalSection.scrollIntoView({ behavior: 'smooth' });
 }
 
 function setRating(idx, dimId, value) {
@@ -400,6 +601,11 @@ function updateComment(idx) {
   const val = document.getElementById('comment-' + idx).value;
   if (!results[idx]) results[idx] = {};
   results[idx].comment = val;
+}
+
+function updateDisplayCheck(idx, checked) {
+  if (!results[idx]) results[idx] = {};
+  results[idx].displayCheck = checked;
 }
 
 // --- SCREENSHOT PASTE ---
@@ -492,8 +698,15 @@ function showStep(idx) {
 }
 
 function collectResults() {
+  initSession();
   const finalData = {
     timestamp: new Date().toISOString(),
+    session: {
+      code: sessionInfo && sessionInfo.code,
+      order: sessionInfo ? sessionInfo.orderNums : order.map(s => s.num),
+      questionsUrl: getSessionUrl('questions'),
+      displayUrl: getSessionUrl('display')
+    },
     order: order.map(s => s.num),
     pages: {},
     final: {
@@ -512,7 +725,10 @@ function collectResults() {
   };
 
   order.forEach((site, idx) => {
-    finalData.pages['Seite ' + site.num] = results[idx] || {};
+    finalData.pages['Seite ' + site.num] = Object.assign({
+      url: site.url,
+      sessionCode: sessionInfo && sessionInfo.code
+    }, results[idx] || {});
   });
 
   return finalData;
@@ -541,17 +757,19 @@ function exportJSON() {
 function exportCSV() {
   const data = getResults();
   if (!data) return alert('Keine Ergebnisse gefunden.');
+  const exportOrder = (data.order || []).map(num => SITES.find(site => site.num === num)).filter(Boolean);
 
   let rows = [];
   // Header
   let header = ['Seite', 'Reihenfolge_Position'];
   DIMENSIONS.forEach(d => header.push(d.label));
+  header.push('Kontrollcheck_PC_Handy');
   header.push('Features');
   header.push('Kommentar');
   rows.push(header.join(','));
 
   // Per page
-  order.forEach((site, idx) => {
+  exportOrder.forEach((site, idx) => {
     const key = 'Seite ' + site.num;
     const page = data.pages[key] || {};
     const ratings = page.ratings || {};
@@ -559,6 +777,7 @@ function exportCSV() {
     DIMENSIONS.forEach(d => {
       row.push(ratings[d.id] !== undefined ? ratings[d.id] : '');
     });
+    row.push(page.displayCheck ? 'ja' : 'nein');
     row.push('"' + (page.features || []).join('; ') + '"');
     row.push('"' + (page.comment || '').replace(/"/g, '""') + '"');
     rows.push(row.join(','));
@@ -574,6 +793,7 @@ function exportCSV() {
   rows.push('Sonstige Anmerkungen,"' + (data.final.notes || '').replace(/"/g, '""') + '"');
   rows.push('');
   rows.push('Reihenfolge,' + data.order.join(' -> '));
+  rows.push('Session,' + ((data.session && data.session.code) || ''));
   rows.push('Zeitstempel,' + data.timestamp);
 
   download('survey-ergebnis.csv', '\uFEFF' + rows.join('\n'));
@@ -588,6 +808,13 @@ function download(filename, content) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  initSession();
+  renderSessionPanel();
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  if (mode === 'display') startDisplayMode();
+});
 </script>
 </body>
 </html>
