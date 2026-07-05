@@ -141,7 +141,7 @@
     gap: .75rem; margin-bottom: .75rem;
   }
   .display-frame {
-    width: 100%; height: 72vh; border: 1.5px solid #d8cfc3; border-radius: 10px;
+    width: 100%; height: calc(100vh - 200px); border: 1.5px solid #d8cfc3; border-radius: 10px;
     background: #f9f8f6;
   }
   .check-confirm label {
@@ -190,21 +190,19 @@
       <li><strong>Screenshots einfügen:</strong> Drücke <kbd>Win+Shift+S</kbd>, wähle einen Bereich aus, klicke ins Kommentarfeld und drücke <kbd>Strg+V</kbd>.</li>
     </ul>
     <p><em>Dauer: ca. 10–15 Minuten. Die Reihenfolge der Seiten ist zufällig.</em></p>
-    <button class="btn btn-primary" onclick="startSurvey()">Umfrage starten</button>
+    <p><strong>Es gibt zwei Möglichkeiten:</strong></p>
+    <p><strong>1.</strong> Auswertung nur am aktuellen Gerät – die Internetseiten werden in neuen Tabs geöffnet.</p>
+    <p><strong>2.</strong> Auswertung mit Internetseiten auf diesem Gerät und zusätzlicher Nutzung des Handys für den Fragebogen.</p>
+    <button class="btn btn-primary" onclick="startSurvey()">Umfrage nur an diesem Gerät starten</button>
     <div class="session-box" id="sessionBox">
       <p style="font-size:.85rem;color:#7a6e64;margin-bottom:.35rem;">Diese Umfrage-Session:</p>
       <div class="session-code" id="sessionCode">----</div>
       <p style="font-size:.85rem;color:#7a6e64;margin-bottom:.5rem;">Fragen auf dem Smartphone öffnen:</p>
       <img id="sessionQr" src="" alt="QR-Code zur gekoppelten Umfrage-Session" width="180" height="180" style="border-radius:8px;">
       <div class="session-actions">
-        <button class="btn btn-secondary" onclick="shareSession()">Session-Link anzeigen</button>
-        <button class="btn btn-secondary" onclick="startDisplayMode()">Monitor-Modus am PC starten</button>
+        <button class="btn btn-secondary" onclick="startDisplayMode()">Survey im geteilten Modus starten</button>
       </div>
-      <p class="session-note"><strong>So funktioniert es:</strong> Öffne die Fragen per QR-Code auf dem Smartphone. Auf dem PC kannst du den Monitor-Modus starten, damit dort die zu bewertenden Webseiten in derselben zufälligen Reihenfolge angezeigt werden.</p>
-      <div class="session-share-details" id="sessionShareDetails">
-        <strong>Optionaler Fallback:</strong> Falls der QR-Code nicht genutzt werden kann, kann dieser Link manuell auf dem Smartphone geöffnet oder geteilt werden. <strong>Kontrolle ist wichtig:</strong> Vergleiche vor jeder Bewertung den vierstelligen Session-Code und die Seitennummer auf PC und Smartphone. Nur wenn beides übereinstimmt, gehört die angezeigte Webseite zur richtigen Survey-Frage.
-        <div class="session-link" id="sessionLinkText"></div>
-      </div>
+      <p class="session-note">Im geteilten Modus kannst du die Fragen per QR-Code auf dem Smartphone öffnen und die zugehörigen Internetseiten auf diesem Gerät anschauen.</p>
     </div>
   </div>
 
@@ -247,6 +245,12 @@
         <div class="paste-previews" id="previews-final"></div>
       </div>
       <button class="btn btn-primary" onclick="submitSurvey()">Umfrage abschließen</button>
+
+      <div class="section active" style="margin-top:1.5rem;">
+      <h2>Alle Internetseiten noch einmal ansehen</h2>
+      <p style="font-size:.9rem;color:#7a6e74;margin-bottom:.75rem;">Falls du noch einmal nachschauen möchtest:</p>
+      <div id="finalSiteLinks" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.5rem;"></div>
+      </div>
 
       <div class="section active" style="margin-top:1.5rem;">
       <h2>Namensvorschlag für die finale Karte</h2>
@@ -477,12 +481,28 @@ function startSurvey() {
     clearSelect.appendChild(opt.cloneNode(true));
   });
 
+  // Abschlussseite: Links zu allen Internetseiten
+  const finalLinks = document.getElementById('finalSiteLinks');
+  if (finalLinks) {
+    finalLinks.innerHTML = '';
+    SITES.forEach(site => {
+      const link = document.createElement('a');
+      link.className = 'site-link';
+      link.href = site.url;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'Seite ' + site.num;
+      finalLinks.appendChild(link);
+    });
+  }
+
   showStep(0);
 }
 
 function buildSectionHTML(site, idx) {
   let html = '<h2>Seite ' + site.num + '</h2>';
-  html += '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Seite ' + site.num + ' in neuem Tab öffnen ↗</a>';
+  html += '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Mobile Version anzeigen ↗</a>';
+    html += '<p style="font-size:.8rem;color:#8a7e74;margin:-.25rem 0 .75rem;">mit dem Zurück-Button anschließend mit dem Survey fortfahren</p>';
   html += '<div class="warning"><strong>Kontrollcheck:</strong> Auf dem PC muss jetzt ebenfalls Session ' + sessionInfo.code + ' und Seite ' + site.num + ' angezeigt werden. Bitte prüfe das vor der Bewertung.</div>';
   html += '<div class="question check-confirm"><label><input type="checkbox" onchange="updateDisplayCheck(\'' + idx + '\', this.checked)"><span>Ich habe geprüft, dass die am PC angezeigte Webseite zu Session ' + sessionInfo.code + ' und Seite ' + site.num + ' gehört.</span></label></div>';
 
@@ -814,6 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderSessionPanel();
   const mode = new URLSearchParams(window.location.search).get('mode');
   if (mode === 'display') startDisplayMode();
+  if (mode === 'questions') startSurvey();
 });
 </script>
 </body>
