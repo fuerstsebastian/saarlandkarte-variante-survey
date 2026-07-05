@@ -593,8 +593,12 @@ function showDisplayStep(idx) {
 function scrollToFinal() {
   document.getElementById('sections').style.display = 'none';
   document.getElementById('progressBar').style.display = 'none';
-  const finalSection = document.getElementById('finalSection');
+  var finalSection = document.getElementById('finalSection');
   finalSection.style.display = 'block';
+  var innerSections = finalSection.querySelectorAll('.section');
+  for (var i = 0; i < innerSections.length; i++) {
+    innerSections[i].style.display = 'block';
+  }
   setTimeout(function() {
     finalSection.scrollIntoView({ behavior: 'smooth' });
   }, 50);
