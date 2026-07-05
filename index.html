@@ -131,18 +131,32 @@
     border-radius: 6px; padding: .45rem; margin-top: .5rem;
   }
   .display-mode { display: none; }
-  .display-mode.active { display: block; }
-  .display-card {
-    background: #fff; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  .display-mode.active {
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 1000; background: #fff;
   }
-  .display-header {
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-    gap: .75rem; margin-bottom: .75rem;
+  .display-topbar {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .4rem 1rem; background: #2d2a26; color: #fff;
+    font-size: .85rem; flex-shrink: 0; flex-wrap: wrap;
   }
+  .display-topbar .session-badge {
+    background: #5b3e2d; padding: .2rem .55rem; border-radius: 5px;
+    font-weight: 700; letter-spacing: .1em;
+  }
+  .display-topbar .flex-spacer { flex: 1; }
+  .display-topbar button {
+    padding: .3rem .8rem; border: none; border-radius: 5px;
+    cursor: pointer; font-size: .8rem; font-weight: 600;
+    background: #5b3e2d; color: #fff; white-space: nowrap;
+  }
+  .display-topbar button:hover { background: #7a5540; }
+  .display-topbar button:disabled { opacity: .4; cursor: not-allowed; }
+  .display-topbar a { color: #d4c5b5; font-size: .8rem; white-space: nowrap; }
+  .display-topbar a:hover { color: #fff; }
   .display-frame {
-    width: 100%; height: calc(100vh - 200px); border: 1.5px solid #d8cfc3; border-radius: 10px;
-    background: #f9f8f6;
+    flex: 1; width: 100%; border: none;
   }
   .check-confirm label {
     display: flex; gap: .5rem; align-items: flex-start; font-weight: 500;
@@ -557,6 +571,7 @@ function startDisplayMode() {
   document.getElementById('progressBar').style.display = 'none';
   document.getElementById('summary').classList.remove('active');
   document.getElementById('displayMode').classList.add('active');
+  document.body.style.overflow = 'hidden';
   showDisplayStep(displayStep);
 }
 
@@ -569,20 +584,17 @@ function showDisplayStep(idx) {
   if (!container || !site) return;
 
   container.innerHTML =
-    '<div class="display-card">' +
-    '<div class="display-header">' +
-    '<div><h2>Monitor-Modus: Seite ' + site.num + '</h2>' +
-    '<p class="subtitle">Session <strong>' + sessionInfo.code + '</strong> · Position ' + (displayStep + 1) + ' von ' + order.length + '</p></div>' +
-    '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Seite ' + site.num + ' in neuem Tab öffnen ↗</a>' +
+    '<div class="display-topbar">' +
+    '<button onclick="location.reload()" style="background:#555;font-size:.9rem;padding:.25rem .55rem;" title="Monitor-Modus schließen">✕</button>' +
+    '<span>Seite ' + site.num + ' von ' + order.length + '</span>' +
+    '<span class="session-badge">Session ' + sessionInfo.code + '</span>' +
+    '<span class="flex-spacer"></span>' +
+    '<a href="' + site.url + '" target="_blank" rel="noopener">In neuem Tab öffnen</a>' +
+    '<button onclick="showDisplayStep(' + (displayStep - 1) + ')" ' + (displayStep === 0 ? 'disabled' : '') + '>← Vorige</button>' +
+    '<button onclick="showDisplayStep(' + (displayStep + 1) + ')" ' + (displayStep === order.length - 1 ? 'disabled' : '') + '>Nächste →</button>' +
+    '<button onclick="location.href=\'' + getSessionUrl('questions') + '\'">Zur Fragenansicht</button>' +
     '</div>' +
-    '<div class="warning"><strong>Kontrollhinweis:</strong> Auf dem Smartphone muss dieselbe Session ' + sessionInfo.code + ' und dieselbe Seite ' + site.num + ' angezeigt werden, bevor bewertet wird.</div>' +
-    '<iframe class="display-frame" src="' + site.url + '" title="Seite ' + site.num + '"></iframe>' +
-    '<div class="btn-row">' +
-    '<button class="btn btn-secondary" onclick="showDisplayStep(' + (displayStep - 1) + ')" ' + (displayStep === 0 ? 'disabled' : '') + '>← Vorige Seite</button>' +
-    '<button class="btn btn-primary" onclick="showDisplayStep(' + (displayStep + 1) + ')" ' + (displayStep === order.length - 1 ? 'disabled' : '') + '>Nächste Seite →</button>' +
-    '<button class="btn btn-secondary" onclick="location.href=\'' + getSessionUrl('questions') + '\'">Zur Fragenansicht</button>' +
-    '</div>' +
-    '</div>';
+    '<iframe class="display-frame" src="' + site.url + '" title="Seite ' + site.num + '"></iframe>';
 }
 
 function scrollToFinal() {
