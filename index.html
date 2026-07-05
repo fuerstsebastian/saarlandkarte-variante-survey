@@ -509,7 +509,7 @@ function startSurvey() {
 
 function buildSectionHTML(site, idx) {
   let html = '<h2>Seite ' + site.num + '</h2>';
-  html += '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Mobile Version anzeigen ↗</a>';
+  html += '<a class="site-link" href="' + site.url + '" target="_blank" rel="noopener">Mobile Version anzeigen / neuen Tab öffnen ↗</a>';
     html += '<p style="font-size:.8rem;color:#8a7e74;margin:-.25rem 0 .75rem;">mit dem Zurück-Button anschließend mit dem Survey fortfahren</p>';
   html += '<div class="warning"><strong>Kontrollcheck:</strong> Auf dem PC muss jetzt ebenfalls Session ' + sessionInfo.code + ' und Seite ' + site.num + ' angezeigt werden. Bitte prüfe das vor der Bewertung.</div>';
   html += '<div class="question check-confirm"><label><input type="checkbox" onchange="updateDisplayCheck(\'' + idx + '\', this.checked)"><span>Ich habe geprüft, dass die am PC angezeigte Webseite zu Session ' + sessionInfo.code + ' und Seite ' + site.num + ' gehört.</span></label></div>';
@@ -591,9 +591,13 @@ function showDisplayStep(idx) {
 }
 
 function scrollToFinal() {
+  document.getElementById('sections').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'none';
   const finalSection = document.getElementById('finalSection');
   finalSection.style.display = 'block';
-  finalSection.scrollIntoView({ behavior: 'smooth' });
+  setTimeout(function() {
+    finalSection.scrollIntoView({ behavior: 'smooth' });
+  }, 50);
 }
 
 function setRating(idx, dimId, value) {
