@@ -786,7 +786,7 @@ async function uploadToGist() {
   try {
     const response = await fetch('https://api.github.com/gists', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json', 'Authorization': 'Bearer ' + GITHUB_GIST_TOKEN },
       body: JSON.stringify({
         description: 'Saarland-Kartenvarianten Survey ' + (data.session && data.session.code || ''),
         public: false,
@@ -803,10 +803,7 @@ async function uploadToGist() {
 
     resultEl.innerHTML =
       '<p style="color:#3a6b35;font-weight:600;">Ergebnisse gespeichert!</p>' +
-      '<p style="font-size:.85rem;">Bitte diesen Link an den Auftraggeber senden:</p>' +
-      '<div style="word-break:break-all;font-size:.8rem;background:#fff;padding:.5rem;border-radius:6px;margin:.5rem 0;">' +
-      '<a href="' + gist.html_url + '" target="_blank" rel="noopener">' + gist.html_url + '</a></div>' +
-      '<button class="btn btn-secondary" style="font-size:.8rem;" onclick="navigator.clipboard.writeText(\'' + gist.html_url + '\');this.textContent=\'Kopiert!\';setTimeout(()=>this.textContent=\'Link kopieren\',2000)">Link kopieren</button>';
+      '<p style="font-size:.85rem;">Der Auftraggeber kann die Ergebnisse jetzt in seinem GitHub-Account einsehen.</p>';
   } catch (e) {
     resultEl.innerHTML =
       '<p style="color:#b33;">Fehler beim Speichern auf GitHub.</p>' +
