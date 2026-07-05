@@ -295,9 +295,10 @@
 
   <div class="summary" id="summary">
     <h2>Vielen Dank!</h2>
-    <p>Ihre Bewertung wurde gespeichert. Sie können die Ergebnisse jetzt herunterladen:</p>
-    <button class="btn btn-primary export-btn" onclick="exportCSV()">Als CSV herunterladen</button>
-    <button class="btn btn-secondary export-btn" onclick="exportJSON()">Als JSON herunterladen</button>
+    <p>Ihre Bewertung wurde gespeichert. Die Ergebnisse sind für den Auftraggeber des Surveys bestimmt.</p>
+    <button class="btn btn-primary export-btn" onclick="uploadToGist()">Ergebnisse anonym auf GitHub speichern</button>
+    <div id="gistResult" style="display:none; margin-top:1rem; padding:1rem; background:#f0ebe3; border-radius:8px;"></div>
+    <p style="margin-top:1rem; font-size:.85rem; color:#7a6e64;">Falls das nicht klappt: <a href="#" onclick="exportJSON();return false;">JSON herunterladen</a> und auf anderem Weg an den Auftraggeber übergeben.</p>
   </div>
 </div>
 
@@ -772,6 +773,46 @@ function exportJSON() {
   const data = getResults();
   if (!data) return alert('Keine Ergebnisse gefunden.');
   download('survey-ergebnis.json', JSON.stringify(data, null, 2));
+}
+
+async function uploadToGist() {
+  const data = getResults();
+  if (!data) return alert('Keine Ergebnisse gefunden.');
+
+  const resultEl = document.getElementById('gistResult');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<p>Speichere Ergebnisse auf GitHub ...</p>';
+
+  try {
+    const response = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        description: 'Saarland-Kartenvarianten Survey ' + (data.session && data.session.code || ''),
+        public: false,
+        files: {
+          'survey-ergebnis.json': {
+            content: JSON.stringify(data, null, 2)
+          }
+        }
+      })
+    });
+
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const gist = await response.json();
+
+    resultEl.innerHTML =
+      '<p style="color:#3a6b35;font-weight:600;">Ergebnisse gespeichert!</p>' +
+      '<p style="font-size:.85rem;">Bitte diesen Link an den Auftraggeber senden:</p>' +
+      '<div style="word-break:break-all;font-size:.8rem;background:#fff;padding:.5rem;border-radius:6px;margin:.5rem 0;">' +
+      '<a href="' + gist.html_url + '" target="_blank" rel="noopener">' + gist.html_url + '</a></div>' +
+      '<button class="btn btn-secondary" style="font-size:.8rem;" onclick="navigator.clipboard.writeText(\'' + gist.html_url + '\');this.textContent=\'Kopiert!\';setTimeout(()=>this.textContent=\'Link kopieren\',2000)">Link kopieren</button>';
+  } catch (e) {
+    resultEl.innerHTML =
+      '<p style="color:#b33;">Fehler beim Speichern auf GitHub.</p>' +
+      '<p style="font-size:.85rem;">Bitte lade die JSON-Datei herunter und übergib sie auf anderem Weg.</p>' +
+      '<button class="btn btn-secondary" style="font-size:.8rem;" onclick="exportJSON()">JSON herunterladen</button>';
+  }
 }
 
 function exportCSV() {
