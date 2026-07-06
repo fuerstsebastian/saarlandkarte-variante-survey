@@ -321,9 +321,8 @@
   <div class="summary" id="summary">
     <h2>Vielen Dank!</h2>
     <p>Ihre Bewertung wurde gespeichert. Die Ergebnisse sind für den Auftraggeber des Surveys bestimmt.</p>
-    <button class="btn btn-primary export-btn" onclick="uploadToGist()">Ergebnisse anonym auf GitHub speichern</button>
-    <div id="gistResult" style="display:none; margin-top:1rem; padding:1rem; background:#f0ebe3; border-radius:8px;"></div>
-    <p style="margin-top:1rem; font-size:.85rem; color:#7a6e64;">Falls das nicht klappt: <a href="#" onclick="exportJSON();return false;">JSON herunterladen</a> und auf anderem Weg an den Auftraggeber übergeben.</p>
+    <button class="btn btn-primary export-btn" onclick="exportJSON()">Ergebnisse als JSON herunterladen</button>
+    <p style="margin-top:1rem; font-size:.85rem; color:#7a6e64;"><a href="#" onclick="exportCSV();return false;">Ergebnisse als CSV herunterladen</a> (für Excel)</p>
   </div>
 </div>
 
@@ -372,7 +371,6 @@ let displayStep = 0;
 
 const SESSION_STORAGE_KEY = 'saarland-survey-session-v2';
 const SURVEY_PUBLIC_URL = 'https://fuerstsebastian.github.io/saarlandkarte-variante-survey/';
-
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -787,43 +785,6 @@ function exportJSON() {
   const data = getResults();
   if (!data) return alert('Keine Ergebnisse gefunden.');
   download('survey-ergebnis.json', JSON.stringify(data, null, 2));
-}
-
-async function uploadToGist() {
-  const data = getResults();
-  if (!data) return alert('Keine Ergebnisse gefunden.');
-
-  const resultEl = document.getElementById('gistResult');
-  resultEl.style.display = 'block';
-  resultEl.innerHTML = '<p>Speichere Ergebnisse auf GitHub ...</p>';
-
-  try {
-    const response = await fetch('https://api.github.com/gists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json', 'Authorization': 'Bearer ' + GITHUB_GIST_TOKEN },
-      body: JSON.stringify({
-        description: 'Saarland-Kartenvarianten Survey ' + (data.session && data.session.code || ''),
-        public: false,
-        files: {
-          'survey-ergebnis.json': {
-            content: JSON.stringify(data, null, 2)
-          }
-        }
-      })
-    });
-
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    const gist = await response.json();
-
-    resultEl.innerHTML =
-      '<p style="color:#3a6b35;font-weight:600;">Ergebnisse gespeichert!</p>' +
-      '<p style="font-size:.85rem;">Der Auftraggeber kann die Ergebnisse jetzt in seinem GitHub-Account einsehen.</p>';
-  } catch (e) {
-    resultEl.innerHTML =
-      '<p style="color:#b33;">Fehler beim Speichern auf GitHub.</p>' +
-      '<p style="font-size:.85rem;">Bitte lade die JSON-Datei herunter und übergib sie auf anderem Weg.</p>' +
-      '<button class="btn btn-secondary" style="font-size:.8rem;" onclick="exportJSON()">JSON herunterladen</button>';
-  }
 }
 
 function exportCSV() {
